@@ -1,9 +1,11 @@
 import React, { createContext, useState } from 'react'
+import { useHistory } from 'react-router-dom'
 
 const AuthContext = createContext()
 const { Provider } = AuthContext
 
 const AuthProvider = ({ children }) => {
+  const history = useHistory()
   const token = localStorage.getItem('token')
   const userInfo = localStorage.getItem('userInfo')
   const expiresAt = localStorage.getItem('expiresAt')
@@ -26,10 +28,38 @@ const AuthProvider = ({ children }) => {
     })
   }
 
+  const logout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('userInfo')
+    localStorage.removeItem('expiresAt')
+
+    setAuthState({
+      token: null,
+      userInfo: {},
+      expiresAt: null,
+    })
+
+    history.push('/login')
+  }
+
+  const isAuthenticated = () => {
+    if (!authState.token || !authState.expiresAt) {
+      return false
+    }
+
+    // check if the token is expired
+    return new Date().getTime() / 1000 < authState.expiresAt
+  }
+
+  const isAdmin = () => authState.userInfo.role === 'admin'
+
   return (
     <Provider
       value={{
         authState,
+        isAdmin,
+        isAuthenticated,
+        logout,
         setAuthState: (authInfo) => setAuthInfo(authInfo),
       }}
     >
